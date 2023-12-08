@@ -1,11 +1,9 @@
-#![allow(non_snake_case)]
-#![allow(unused)]
-use dioxus_fullstack::prelude::*;
-use dioxus_router::prelude::*;
-use dioxus::prelude::*;
-use pages::{Blog, Home};
-
+mod layouts;
 mod pages;
+
+use dioxus::prelude::*;
+use dioxus_router::prelude::*;
+use pages::{Blog, Home};
 
 pub fn hello() -> String {
     "Hello!".to_string()
@@ -18,4 +16,3 @@ pub enum Route {
     #[route("/blog/:id")]
     Blog { id: i32 },
 }
-

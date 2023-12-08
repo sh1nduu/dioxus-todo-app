@@ -1,8 +1,4 @@
-#![allow(non_snake_case)]
-#![allow(unused)]
 use dioxus_fullstack::prelude::*;
-use dioxus_router::prelude::*;
-use dioxus::prelude::*;
 use log::LevelFilter;
 use todolib::Route;
 
@@ -18,4 +14,3 @@ fn main() {
 
     config.launch();
 }
-

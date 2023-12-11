@@ -12,16 +12,20 @@ path = "src/lib.rs"
 
 [dependencies]
 
-dioxus-fullstack = { version = "0.4", features = ["router"] }
-
-dioxus = { version = "0.4" }
+dioxus-fullstack = { version = "0.4.3", features = ["router"] }
+dioxus = { version = "0.4.3" }
 serde = { version = "1.0.159", features = ["derive"] }
-
-dioxus-router = { version = "0.4" }
+dioxus-router = { version = "0.4.3" }
 
 # Debug
 log = "0.4.19"
 dioxus-logger = "0.4.1"
+
+anyhow = "1.0.75"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+sqlx = { version = "0.7.3", features = ["runtime-tokio", "sqlite", "macros"] }
+#getrandom = { version = "0.2.11", features = ["js"] }
 
 [features]
 default = []
@@ -29,4 +33,3 @@ default = []
 ssr = ["dioxus-fullstack/axum"]
 
 web = ["dioxus-router/web", "dioxus-fullstack/web"]
-

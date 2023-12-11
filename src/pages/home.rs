@@ -2,12 +2,17 @@
 use dioxus::prelude::*;
 use dioxus_fullstack::prelude::*;
 
-use crate::layouts::Layout;
+use crate::{
+    domain::TodoItem,
+    layouts::Layout,
+};
 
 #[derive(PartialEq, Props)]
 pub(crate) struct HomeProps {}
 
 pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
+    let mut todo_items = use_server_future(cx, (), |_| async { get_todos().await })?;
+
     cx.render(rsx! {
         Layout {
             section { class: "w-2/3",
@@ -35,14 +40,20 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
                         }
                     }
                     ul { class: "",
-                        li { class: "border-b border-gray-300 group",
-                            div { class: "flex text-gray-500 text-2xl font-light bg-tranparent items-center",
-                                input {
-                                    class: "h-[40px] w-[60px] ml-4 appearance-none border-none outline-none bg-no-repeat bg-[url('circle.svg')] bg-[center_left]",
-                                    r#type: "checkbox"
+                        if let Ok(todo_items) = todo_items.value().as_deref() {
+                            rsx! {
+                                for todo_item in todo_items {
+                                    li { class: "border-b border-gray-300 group",
+                                        div { class: "flex text-gray-500 text-2xl font-light bg-tranparent items-center",
+                                            input {
+                                                class: "h-[40px] w-[60px] ml-4 appearance-none border-none outline-none bg-no-repeat bg-[url('circle.svg')] bg-[center_left]",
+                                                r#type: "checkbox"
+                                            }
+                                            label { class: "py-4 pl-1 w-full", "foobar" }
+                                            button { class: "w-[40px] h-[40px] mr-4 group-hover:bg-[url('cross.svg')] bg-no-repeat bg-center" }
+                                        }
+                                    }
                                 }
-                                label { class: "py-4 pl-1 w-full", "foobar" }
-                                button { class: "w-[40px] h-[40px] mr-4 group-hover:bg-[url('cross.svg')] bg-no-repeat bg-center" }
                             }
                         }
                     }
@@ -63,6 +74,11 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
     })
 }
 
+#[server]
+async fn get_todos() -> Result<Vec<TodoItem>, ServerFnError> {
+    Ok(vec![TodoItem::new(1, "foobar"), TodoItem::new(2, "buzz"), TodoItem::new(3, "hoge")])
+}
+
 #[server(PostServerData)]
 async fn post_server_data(data: String) -> Result<(), ServerFnError> {
     println!("Server received: {}", data);
@@ -73,4 +89,8 @@ async fn post_server_data(data: String) -> Result<(), ServerFnError> {
 #[server(GetServerData)]
 async fn get_server_data() -> Result<String, ServerFnError> {
     Ok("Hello from the server!".to_string())
+}
+
+fn server_err(e: anyhow::Error) -> ServerFnError {
+    ServerFnError::ServerError(format!("{}", e))
 }

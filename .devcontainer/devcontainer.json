@@ -1,0 +1,13 @@
+{
+    "dockerComposeFile": ["compose.yml"],
+    "service": "app",
+    "workspaceFolder": "/workspace",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "bradlc.vscode-tailwindcss",
+                "rust-lang.rust-analyzer"
+            ]
+        }
+    },
+}

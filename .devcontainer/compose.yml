@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      dockerfile: ../Dockerfile
+    restart: always
+    tty: true
+    working_dir: /workspace
+    environment:
+      - DATABASE_URL=sqlite:data/todos.db
+    volumes:
+      - ../:/workspace
+      - node-modules:/workspace/node_modules
+      - rust-target:/workspace/target
+      - dist-data:/workspace/dist
+      - static-data:/workspace/static
+
+volumes:
+  node-modules:
+  rust-target:
+  dist-data:
+  static-data:

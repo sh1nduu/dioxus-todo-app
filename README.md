@@ -13,3 +13,31 @@ Launch the Dioxus Fullstack app:
 dx build --features web --release
 cargo run --features ssr --release
 ```
+
+## Setup Database
+
+1. Declare the database URL
+
+    ```bash
+    export DATABASE_URL="sqlite:data/todos.db"
+    ```
+
+2. Create the database.
+
+    ```bash
+    sqlx db create
+    ```
+
+3. Run sql migrations
+
+    ```bash
+    sqlx migrate run
+    ```
+
+## For Mac users (WIP)
+
+Apple Clang doesn't support `wasm32-unknown-unknown`, so you need to install llvm.org Clang instead.
+
+```
+brew install llvm
+```

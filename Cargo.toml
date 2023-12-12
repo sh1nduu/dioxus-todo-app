@@ -12,6 +12,7 @@ path = "src/lib.rs"
 
 [dependencies]
 
+dioxus-web = { version = "0.4.3", features = ["hydrate"], optional = true }
 dioxus-fullstack = { version = "0.4.3", features = ["router"] }
 dioxus = { version = "0.4.3" }
 serde = { version = "1.0.159", features = ["derive"] }
@@ -23,13 +24,15 @@ dioxus-logger = "0.4.1"
 
 anyhow = "1.0.75"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-sqlx = { version = "0.7.3", features = ["runtime-tokio", "sqlite", "macros"] }
-#getrandom = { version = "0.2.11", features = ["js"] }
+sqlx = { version = "0.7.3", features = ["runtime-tokio", "tls-rustls", "sqlite", "macros"], optional = true }
+getrandom = { version = "0.2.11", features = ["js"] }
+async-trait = "0.1.74"
+tokio = { version = "1.35.0", features = ["full"], optional = true }
+axum = { version = "0.6.20", optional = true }
 
 [features]
 default = []
 
-ssr = ["dioxus-fullstack/axum"]
+ssr = [ "axum", "dioxus-fullstack/axum", "tokio", "sqlx"]
 
-web = ["dioxus-router/web", "dioxus-fullstack/web"]
+web = ["dioxus-web"]

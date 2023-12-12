@@ -2,8 +2,13 @@ FROM rust:1.71-slim-bookworm
 
 WORKDIR /workspace
 
+RUN rustup target add wasm32-unknown-unknown && rustup component add rustfmt
+
 ENV NODE_MAJOR 21
-RUN apt-get update \
+
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    --mount=type=cache,target=/var/cache/apt/archives \
+    apt-get update \
     && apt-get install -y \
         ca-certificates \
         curl \
@@ -32,8 +37,7 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN rustup target add wasm32-unknown-unknown
-
-RUN cargo install sqlx-cli --no-default-features --features rustls,sqlite \
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo install sqlx-cli --no-default-features --features rustls,sqlite \
     && cargo install just \
     && cargo install dioxus-cli --locked

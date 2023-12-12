@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -15,4 +16,9 @@ impl TodoItem {
             contents: contents.to_owned(),
         }
     }
+}
+
+#[async_trait]
+pub trait TodoRepository {
+    async fn list(&self) -> anyhow::Result<Vec<TodoItem>>;
 }

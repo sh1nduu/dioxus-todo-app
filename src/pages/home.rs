@@ -2,19 +2,16 @@
 use dioxus::prelude::*;
 use dioxus_fullstack::prelude::*;
 
-use crate::{
-    domain::TodoItem,
-    layouts::Layout,
-};
+use crate::{domain::TodoItem, layouts::Layout};
 
 #[derive(PartialEq, Props)]
 pub(crate) struct HomeProps {}
 
 pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
-    let mut todo_items = use_server_future(cx, (), |_| async { get_todos().await })?;
+    let todo_items = use_server_future(cx, (), |_| async { get_todos().await })?.value();
 
     cx.render(rsx! {
-        Layout {
+        Layout { 
             section { class: "w-2/3",
                 header { class: "",
                     h1 { class: "mb-4 text-8xl text-gray-300 font-thin text-center drop-shadow-sm",
@@ -40,7 +37,7 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
                         }
                     }
                     ul { class: "",
-                        if let Ok(todo_items) = todo_items.value().as_deref() {
+                        if let Ok(todo_items) = todo_items.as_deref() {
                             rsx! {
                                 for todo_item in todo_items {
                                     li { class: "border-b border-gray-300 group",
@@ -49,7 +46,7 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
                                                 class: "h-[40px] w-[60px] ml-4 appearance-none border-none outline-none bg-no-repeat bg-[url('circle.svg')] bg-[center_left]",
                                                 r#type: "checkbox"
                                             }
-                                            label { class: "py-4 pl-1 w-full", "foobar" }
+                                            label { class: "py-4 pl-1 w-full", "{todo_item.contents}" }
                                             button { class: "w-[40px] h-[40px] mr-4 group-hover:bg-[url('cross.svg')] bg-no-repeat bg-center" }
                                         }
                                     }
@@ -76,7 +73,11 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
 
 #[server]
 async fn get_todos() -> Result<Vec<TodoItem>, ServerFnError> {
-    Ok(vec![TodoItem::new(1, "foobar"), TodoItem::new(2, "buzz"), TodoItem::new(3, "hoge")])
+    Ok(vec![
+        TodoItem::new(1, "foobar"),
+        TodoItem::new(2, "buzz"),
+        TodoItem::new(3, "hoge"),
+    ])
 }
 
 #[server(PostServerData)]

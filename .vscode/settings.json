@@ -5,10 +5,12 @@
     "rust-analyzer.server.extraEnv": {
         "DATABASE_URL": "/workspace/data/todos.db"
     },
+    "rust-analyzer.cargo.features": "all",
     "tailwindCSS.experimental.classRegex": [
         "class: \"(.*)\""
     ],
      "tailwindCSS.includeLanguages": {
         "rust": "html"
     },
+    "rust-analyzer.showUnlinkedFileNotification": false,
 }

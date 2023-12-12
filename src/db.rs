@@ -1,8 +1,20 @@
-use std::env;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use std::env;
+use async_trait::async_trait;
 
-use crate::domain::TodoItem;
+use crate::domain::{TodoItem, TodoRepository};
+
+pub struct TodoRepositoryImpl {
+    pool: SqlitePool,
+}
+
+#[async_trait]
+impl TodoRepository for TodoRepositoryImpl {
+    async fn list(&self) -> anyhow::Result<Vec<TodoItem>> {
+        list_todos(&self.pool).await
+    }
+}
 
 pub async fn establish() -> anyhow::Result<SqlitePool> {
     Ok(SqlitePool::connect(&env::var("DATABASE_URL")?).await?)
@@ -39,7 +51,8 @@ pub async fn list_todos(pool: &SqlitePool) -> anyhow::Result<Vec<TodoItem>> {
             id: r.id,
             checked: r.checked,
             contents: r.contents,
-        }).collect();
+        })
+        .collect();
 
     Ok(items)
 }

@@ -1,6 +1,6 @@
 dev:
-    dx build --features web
-    cargo run --features ssr
+    dx build --features web --release
+    cargo run --features ssr --release
 
 dev-ui:
     dx build --features web

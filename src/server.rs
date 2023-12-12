@@ -1,19 +1,19 @@
-use sqlx::{Sqlite, Pool};
+use axum::Extension;
 use dioxus_fullstack::prelude::*;
 
-use crate::db;
+use crate::db::{self, TodoRepositoryImpl};
 
-struct AppState {
-    pool: Pool<Sqlite>,
+#[derive(Clone)]
+pub struct AppState {
+    pub todo_repo: TodoRepositoryImpl,
 }
 
 pub async fn launch() -> anyhow::Result<()> {
     let pool = db::establish().await?;
-    let state = AppState { pool };
-
 
     let app = axum::Router::new()
-       .serve_dioxus_application("", ServeConfigBuilder::new(crate::app, ()));
+        .serve_dioxus_application("", ServeConfigBuilder::new(crate::app, ()))
+        .layer(Extension(TodoRepositoryImpl::new(&pool)));
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
     axum::Server::bind(&addr)

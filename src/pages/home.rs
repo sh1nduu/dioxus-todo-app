@@ -2,7 +2,12 @@
 use dioxus::prelude::*;
 use dioxus_fullstack::prelude::*;
 
-use crate::{domain::TodoItem, layouts::Layout};
+#[cfg(feature = "ssr")]
+use crate::db::TodoRepositoryImpl;
+use crate::{
+    domain::{TodoItem, TodoRepository},
+    layouts::Layout,
+};
 
 #[derive(PartialEq, Props)]
 pub(crate) struct HomeProps {}
@@ -73,11 +78,9 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
 
 #[server]
 async fn get_todos() -> Result<Vec<TodoItem>, ServerFnError> {
-    Ok(vec![
-        TodoItem::new(1, "foobar"),
-        TodoItem::new(2, "buzz"),
-        TodoItem::new(3, "hoge"),
-    ])
+    let repo: TodoRepositoryImpl = extract().await?;
+    let todos = repo.list().await.map_err(server_err)?;
+    Ok(todos)
 }
 
 #[server(PostServerData)]

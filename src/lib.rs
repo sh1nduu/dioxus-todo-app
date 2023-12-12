@@ -23,9 +23,7 @@ pub enum Route {
 
 #[component]
 pub fn app(cx: Scope) -> Element {
-    cx.render(rsx! {
-        Router::<Route> { }
-    })
+    cx.render(rsx! { Router::<Route> {} })
 }
 
 pub fn launch() {
@@ -39,7 +37,7 @@ pub fn launch() {
         tokio::runtime::Runtime::new()
             .unwrap()
             .block_on(async move {
-                server::launch().await;
+                let _ = server::launch().await;
             });
     }
 }

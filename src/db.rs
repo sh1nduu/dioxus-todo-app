@@ -1,9 +1,6 @@
 use async_trait::async_trait;
-use axum::{extract::FromRef, http};
-use dioxus_fullstack::prelude::{Axum, DioxusServerContext, FromServerContext};
-use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use std::{convert::Infallible, env};
+use std::env;
 
 use crate::domain::{TodoItem, TodoRepository};
 
@@ -22,22 +19,6 @@ impl TodoRepositoryImpl {
 impl TodoRepository for TodoRepositoryImpl {
     async fn list(&self) -> anyhow::Result<Vec<TodoItem>> {
         list_todos(&self.pool).await
-    }
-}
-
-#[async_trait]
-impl<S> axum::extract::FromRequestParts<S> for TodoRepositoryImpl {
-    type Rejection = Infallible;
-
-    async fn from_request_parts(
-        parts: &mut http::request::Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        parts
-            .extensions
-            .get::<TodoRepositoryImpl>()
-            .cloned()
-            .ok_or_else(|| unreachable!())
     }
 }
 

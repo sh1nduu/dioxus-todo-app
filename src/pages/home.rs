@@ -3,9 +3,9 @@ use dioxus::prelude::*;
 use dioxus_fullstack::prelude::*;
 
 #[cfg(feature = "ssr")]
-use crate::db::TodoRepositoryImpl;
+use crate::server::AppModule;
 use crate::{
-    domain::{TodoItem, TodoRepository},
+    domain::TodoItem,
     layouts::Layout,
 };
 
@@ -78,8 +78,8 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
 
 #[server]
 async fn get_todos() -> Result<Vec<TodoItem>, ServerFnError> {
-    let repo: TodoRepositoryImpl = extract().await?;
-    let todos = repo.list().await.map_err(server_err)?;
+    let app_module: AppModule = extract().await?;
+    let todos = app_module.todo_repository.list().await.map_err(server_err)?;
     Ok(todos)
 }
 

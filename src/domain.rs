@@ -19,6 +19,6 @@ impl TodoItem {
 }
 
 #[async_trait]
-pub trait TodoRepository {
+pub trait TodoRepository: Send + Sync + 'static {
     async fn list(&self) -> anyhow::Result<Vec<TodoItem>>;
 }

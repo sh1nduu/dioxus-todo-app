@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct TodoItem {
     pub id: i64,
     pub checked: bool,
@@ -21,4 +21,5 @@ impl TodoItem {
 #[async_trait]
 pub trait TodoRepository: Send + Sync + 'static {
     async fn list(&self) -> anyhow::Result<Vec<TodoItem>>;
+    async fn add(&self, contents: &'_ str) -> anyhow::Result<TodoItem>;
 }

@@ -20,6 +20,9 @@ impl TodoRepository for TodoRepositoryImpl {
     async fn list(&self) -> anyhow::Result<Vec<TodoItem>> {
         list_todos(&self.pool).await
     }
+    async fn add(&self, contents: &'_ str) -> anyhow::Result<TodoItem> {
+        add_todo(&self.pool, contents).await
+    }
 }
 
 pub async fn establish() -> anyhow::Result<SqlitePool> {
@@ -29,7 +32,7 @@ pub async fn establish() -> anyhow::Result<SqlitePool> {
 pub async fn add_todo(pool: &SqlitePool, contents: &'_ str) -> anyhow::Result<TodoItem> {
     let mut conn = pool.acquire().await?;
     let id = sqlx::query!(
-        "INSERT INTO todo_items ( contents ) VALUES ( ?1 )",
+        "INSERT INTO todo_items ( contents, checked ) VALUES ( ?1 , 0 )",
         contents
     )
     .execute(&mut *conn)

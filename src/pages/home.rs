@@ -1,22 +1,44 @@
 #![allow(non_snake_case)]
-use dioxus::prelude::*;
+
+use dioxus::{html::input_data::keyboard_types::Key, prelude::*};
 use dioxus_fullstack::prelude::*;
 
 #[cfg(feature = "ssr")]
 use crate::server::AppModule;
-use crate::{
-    domain::TodoItem,
-    layouts::Layout,
-};
+use crate::{domain::TodoItem, layouts::Layout};
 
 #[derive(PartialEq, Props)]
 pub(crate) struct HomeProps {}
 
 pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
-    let todo_items = use_server_future(cx, (), |_| async { get_todos().await })?.value();
+    let initial_todo_items = use_server_future(cx, (), |_| async { get_todos().await })?.value();
+    let Ok(todo_items) = initial_todo_items.as_deref() else {
+        return cx.render(rsx! {"Failed!"});
+    };
+    let todo_items = use_state(cx, move || todo_items.to_owned());
+    let draft = use_state(cx, || "".to_string());
+
+    let handle_header_input = move |evt: Event<FormData>| {
+        draft.set(evt.value.clone());
+    };
+    let handle_header_keydown = move |evt: Event<KeyboardData>| {
+        to_owned![draft, todo_items];
+        cx.spawn(async move {
+            if evt.key() != Key::Enter {
+                return;
+            }
+            match add_todo(draft.to_string()).await {
+                Ok(todo) => {
+                    todo_items.make_mut().insert(todo_items.len(), todo);
+                    draft.set("".to_string());
+                }
+                Err(e) => log::error!("Failed! {}", e),
+            }
+        })
+    };
 
     cx.render(rsx! {
-        Layout { 
+        Layout {
             section { class: "w-2/3",
                 header { class: "",
                     h1 { class: "mb-4 text-8xl text-gray-300 font-thin text-center drop-shadow-sm",
@@ -38,23 +60,22 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
                         input {
                             class: "w-full border-none text-gray-500 text-2xl font-light outline-none p-4",
                             placeholder: "What needs to be done?",
-                            autofocus: true
+                            autofocus: true,
+                            value: "{draft}",
+                            oninput: handle_header_input,
+                            onkeydown: handle_header_keydown
                         }
                     }
                     ul { class: "",
-                        if let Ok(todo_items) = todo_items.as_deref() {
-                            rsx! {
-                                for todo_item in todo_items {
-                                    li { class: "border-b border-gray-300 group",
-                                        div { class: "flex text-gray-500 text-2xl font-light bg-tranparent items-center",
-                                            input {
-                                                class: "h-[40px] w-[60px] ml-4 appearance-none border-none outline-none bg-no-repeat bg-[url('circle.svg')] bg-[center_left]",
-                                                r#type: "checkbox"
-                                            }
-                                            label { class: "py-4 pl-1 w-full", "{todo_item.contents}" }
-                                            button { class: "w-[40px] h-[40px] mr-4 group-hover:bg-[url('cross.svg')] bg-no-repeat bg-center" }
-                                        }
+                        for todo_item in todo_items.iter() {
+                            li { class: "border-b border-gray-300 group",
+                                div { class: "flex text-gray-500 text-2xl font-light bg-tranparent items-center",
+                                    input {
+                                        class: "h-[40px] w-[60px] ml-4 appearance-none border-none outline-none bg-no-repeat bg-[url('circle.svg')] bg-[center_left]",
+                                        r#type: "checkbox"
                                     }
+                                    label { class: "py-4 pl-1 w-full", "{todo_item.contents}" }
+                                    button { class: "w-[40px] h-[40px] mr-4 group-hover:bg-[url('cross.svg')] bg-no-repeat bg-center" }
                                 }
                             }
                         }
@@ -78,21 +99,14 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
 
 #[server]
 async fn get_todos() -> Result<Vec<TodoItem>, ServerFnError> {
-    let app_module: AppModule = extract().await?;
-    let todos = app_module.todo_repository.list().await.map_err(server_err)?;
-    Ok(todos)
+    let todo_repository = extract::<AppModule, _>().await?.todo_repository;
+    todo_repository.list().await.map_err(server_err)
 }
 
-#[server(PostServerData)]
-async fn post_server_data(data: String) -> Result<(), ServerFnError> {
-    println!("Server received: {}", data);
-
-    Ok(())
-}
-
-#[server(GetServerData)]
-async fn get_server_data() -> Result<String, ServerFnError> {
-    Ok("Hello from the server!".to_string())
+#[server]
+async fn add_todo<'a>(contents: String) -> Result<TodoItem, ServerFnError> {
+    let todo_repository = extract::<AppModule, _>().await?.todo_repository;
+    todo_repository.add(&contents).await.map_err(server_err)
 }
 
 fn server_err(e: anyhow::Error) -> ServerFnError {

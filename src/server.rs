@@ -1,12 +1,15 @@
-use std::sync::Arc;
 use async_trait::async_trait;
 use axum::http;
 use std::convert::Infallible;
+use std::sync::Arc;
 
 use axum::Extension;
 use dioxus_fullstack::prelude::*;
 
-use crate::{db::{self, TodoRepositoryImpl}, domain::TodoRepository};
+use crate::{
+    db::{self, TodoRepositoryImpl},
+    domain::TodoRepository,
+};
 
 #[derive(Clone)]
 pub struct AppModule {

@@ -3,7 +3,7 @@
         "./Cargo.toml",
     ],
     "rust-analyzer.server.extraEnv": {
-        "DATABASE_URL": "/workspace/data/todos.db"
+        "DATABASE_URL": "sqlite:/workspace/data/todos.db"
     },
     "rust-analyzer.cargo.features": "all",
     "tailwindCSS.experimental.classRegex": [

@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, checked, contents FROM todo_items",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "checked",
+        "ordinal": 1,
+        "type_info": "Bool"
+      },
+      {
+        "name": "contents",
+        "ordinal": 2,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1f5245d994e635300e6c716bcced58e70a14b6a90929e0709bef1e3e4d8188a9"
+}

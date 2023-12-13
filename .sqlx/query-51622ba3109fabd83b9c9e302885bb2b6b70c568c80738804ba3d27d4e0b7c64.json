@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE todo_items SET checked = TRUE WHERE id = ?1 ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "51622ba3109fabd83b9c9e302885bb2b6b70c568c80738804ba3d27d4e0b7c64"
+}

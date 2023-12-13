@@ -7,4 +7,8 @@ dev-ui:
     dx serve --features ssr --hot-reload --platform desktop
 
 fmt:
+    cargo fmt
     dx fmt
+
+prepare:
+    cargo sqlx prepare -- --all-features

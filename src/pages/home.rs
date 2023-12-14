@@ -51,7 +51,7 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
         cx.spawn(async move {
             match toggle_todo(id).await {
                 Ok(Some(new_todo_item)) => {
-                    let Some(idx) =todo_items.iter().position(|item| item.id == id) else {
+                    let Some(idx) = todo_items.iter().position(|item| item.id == id) else {
                         log::debug!("The item already removed (id: {})", id);
                         return;
                     };
@@ -62,20 +62,7 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
             }
         })
     };
-    let todo_checked_bg_style = |item: &TodoItem| {
-        if item.checked {
-            "bg-[url('checked.svg')]"
-        } else {
-            "bg-[url('circle.svg')]"
-        }
-    };
-    let todo_checked_label_style = |item: &TodoItem| {
-        if item.checked {
-            "line-through decoration-slate-500"
-        } else {
-            ""
-        }
-    };
+    let active_items_count = todo_items.iter().filter(|item| !item.checked).count();
 
     cx.render(rsx! {
         Layout { 
@@ -107,29 +94,19 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
                         }
                     }
                     ul { class: "",
-                        for todo_item in todo_items.iter() {
-                            li { class: "border-b border-gray-300 group",
-                                div { class: "flex text-gray-500 text-2xl font-light bg-tranparent items-center",
-                                    input {
-                                        class: "h-[40px] w-[60px] ml-4 appearance-none border-none outline-none bg-no-repeat {todo_checked_bg_style(todo_item)} bg-[center_left]",
-                                        r#type: "checkbox",
-                                        onclick: move |_| { handle_toggle_todo(todo_item.id) }
-                                    }
-                                    label { class: "py-4 pl-1 w-full {todo_checked_label_style(todo_item)}",
-                                        "{todo_item.contents}"
-                                    }
-                                    button {
-                                        class: "w-[40px] h-[40px] mr-4 group-hover:bg-[url('cross.svg')] bg-no-repeat bg-center",
-                                        onclick: move |_| { handle_delete_todo(todo_item.id) }
-                                    }
-                                }
+                        todo_items.iter().map(|todo_item| rsx! {
+                            TodoRow {
+                                key: "{todo_item.id}",
+                                todo_item: todo_item,
+                                on_toggle: handle_toggle_todo,
+                                on_delete: handle_delete_todo,
                             }
-                        }
+                        })
                     }
                 }
                 footer { class: "flex items-center bg-white drop-shadow text-gray-500 text-l h-12",
                     div { class: "w-1/3 pl-4 ml-4",
-                        strong { "3" }
+                        strong { "{active_items_count}" }
                         " items left"
                     }
                     ul { class: "w-1/3 flex justify-evenly",
@@ -141,6 +118,44 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
             }
         }
     })
+}
+
+#[derive(Props)]
+struct TodoRowProps<'a> {
+    todo_item: &'a TodoItem,
+    on_toggle: EventHandler<'a, i64>,
+    on_delete: EventHandler<'a, i64>,
+}
+
+fn TodoRow<'a>(cx: Scope<'a, TodoRowProps<'a>>) -> Element<'a> {
+    let todo_item = cx.props.todo_item;
+    let todo_checked_bg_style = if todo_item.checked {
+        "bg-[url('checked.svg')]"
+    } else {
+        "bg-[url('circle.svg')]"
+    };
+    let todo_checked_label_style = if todo_item.checked {
+        "line-through decoration-slate-500"
+    } else {
+        ""
+    };
+
+    render!(
+        li { class: "border-b border-gray-300 group",
+            div { class: "flex text-gray-500 text-2xl font-light bg-tranparent items-center",
+                input {
+                    class: "h-[40px] w-[60px] ml-4 appearance-none border-none outline-none bg-no-repeat bg-[center_left] {todo_checked_bg_style}",
+                    r#type: "checkbox",
+                    onclick: move |_| cx.props.on_toggle.call(todo_item.id)
+                }
+                label { class: "py-4 pl-1 w-full {todo_checked_label_style}", "{todo_item.contents}" }
+                button {
+                    class: "w-[40px] h-[40px] mr-4 group-hover:bg-[url('cross.svg')] bg-no-repeat bg-center",
+                    onclick: move |_| cx.props.on_delete.call(todo_item.id)
+                }
+            }
+        }
+    )
 }
 
 #[server]

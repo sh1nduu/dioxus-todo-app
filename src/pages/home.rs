@@ -46,6 +46,36 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
             }
         })
     };
+    let handle_toggle_todo = move |id| {
+        to_owned![todo_items];
+        cx.spawn(async move {
+            match toggle_todo(id).await {
+                Ok(Some(new_todo_item)) => {
+                    let Some(idx) =todo_items.iter().position(|item| item.id == id) else {
+                        log::debug!("The item already removed (id: {})", id);
+                        return;
+                    };
+                    let _ = std::mem::replace(&mut todo_items.make_mut()[idx], new_todo_item);
+                }
+                Ok(None) => log::error!("The item is missing! (id: {})", id),
+                Err(e) => log::error!("Failed! {}", e),
+            }
+        })
+    };
+    let todo_checked_bg_style = |item: &TodoItem| {
+        if item.checked {
+            "bg-[url('checked.svg')]"
+        } else {
+            "bg-[url('circle.svg')]"
+        }
+    };
+    let todo_checked_label_style = |item: &TodoItem| {
+        if item.checked {
+            "line-through decoration-slate-500"
+        } else {
+            ""
+        }
+    };
 
     cx.render(rsx! {
         Layout { 
@@ -81,10 +111,13 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
                             li { class: "border-b border-gray-300 group",
                                 div { class: "flex text-gray-500 text-2xl font-light bg-tranparent items-center",
                                     input {
-                                        class: "h-[40px] w-[60px] ml-4 appearance-none border-none outline-none bg-no-repeat bg-[url('circle.svg')] bg-[center_left]",
-                                        r#type: "checkbox"
+                                        class: "h-[40px] w-[60px] ml-4 appearance-none border-none outline-none bg-no-repeat {todo_checked_bg_style(todo_item)} bg-[center_left]",
+                                        r#type: "checkbox",
+                                        onclick: move |_| { handle_toggle_todo(todo_item.id) }
                                     }
-                                    label { class: "py-4 pl-1 w-full", "{todo_item.contents}" }
+                                    label { class: "py-4 pl-1 w-full {todo_checked_label_style(todo_item)}",
+                                        "{todo_item.contents}"
+                                    }
                                     button {
                                         class: "w-[40px] h-[40px] mr-4 group-hover:bg-[url('cross.svg')] bg-no-repeat bg-center",
                                         onclick: move |_| { handle_delete_todo(todo_item.id) }
@@ -126,6 +159,12 @@ async fn add_todo<'a>(contents: String) -> Result<TodoItem, ServerFnError> {
 async fn delete_todo(id: i64) -> Result<bool, ServerFnError> {
     let todo_repository = extract::<AppModule, _>().await?.todo_repository;
     todo_repository.delete(id).await.map_err(server_err)
+}
+
+#[server]
+async fn toggle_todo(id: i64) -> Result<Option<TodoItem>, ServerFnError> {
+    let todo_repository = extract::<AppModule, _>().await?.todo_repository;
+    todo_repository.toggle(id).await.map_err(server_err)
 }
 
 fn server_err(e: anyhow::Error) -> ServerFnError {

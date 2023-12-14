@@ -23,6 +23,9 @@ impl TodoRepository for TodoRepositoryImpl {
     async fn add(&self, contents: &'_ str) -> anyhow::Result<TodoItem> {
         add_todo(&self.pool, contents).await
     }
+    async fn delete(&self, id: i64) -> anyhow::Result<bool> {
+        delete_todo(&self.pool, id).await
+    }
 }
 
 pub async fn establish() -> anyhow::Result<SqlitePool> {
@@ -46,7 +49,7 @@ pub async fn complete_todo(pool: &SqlitePool, id: i64) -> anyhow::Result<bool> {
     let rows_affected = sqlx::query!("UPDATE todo_items SET checked = TRUE WHERE id = ?1 ", id)
         .execute(pool)
         .await?
-        .last_insert_rowid();
+        .rows_affected();
 
     Ok(rows_affected > 0)
 }
@@ -64,4 +67,13 @@ pub async fn list_todos(pool: &SqlitePool) -> anyhow::Result<Vec<TodoItem>> {
         .collect();
 
     Ok(items)
+}
+
+pub async fn delete_todo(pool: &SqlitePool, id: i64) -> anyhow::Result<bool> {
+    let rows_affected = sqlx::query!("DELETE FROM todo_items WHERE id = ?1", id)
+        .execute(pool)
+        .await?
+        .rows_affected();
+
+    Ok(rows_affected > 0)
 }

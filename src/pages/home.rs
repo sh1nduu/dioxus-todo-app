@@ -22,11 +22,11 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
         draft.set(evt.value.clone());
     };
     let handle_header_keydown = move |evt: Event<KeyboardData>| {
+        if evt.key() != Key::Enter {
+            return;
+        }
         to_owned![draft, todo_items];
         cx.spawn(async move {
-            if evt.key() != Key::Enter {
-                return;
-            }
             match add_todo(draft.to_string()).await {
                 Ok(todo) => {
                     todo_items.make_mut().insert(todo_items.len(), todo);
@@ -36,9 +36,19 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
             }
         })
     };
+    let handle_delete_todo = move |id| {
+        to_owned![todo_items];
+        cx.spawn(async move {
+            match delete_todo(id).await {
+                Ok(true) => todo_items.make_mut().retain(|item| item.id != id),
+                Ok(false) => log::info!("Failed to delete item (id: {})", id),
+                Err(e) => log::error!("Failed! {}", e),
+            }
+        })
+    };
 
     cx.render(rsx! {
-        Layout {
+        Layout { 
             section { class: "w-2/3",
                 header { class: "",
                     h1 { class: "mb-4 text-8xl text-gray-300 font-thin text-center drop-shadow-sm",
@@ -75,7 +85,10 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
                                         r#type: "checkbox"
                                     }
                                     label { class: "py-4 pl-1 w-full", "{todo_item.contents}" }
-                                    button { class: "w-[40px] h-[40px] mr-4 group-hover:bg-[url('cross.svg')] bg-no-repeat bg-center" }
+                                    button {
+                                        class: "w-[40px] h-[40px] mr-4 group-hover:bg-[url('cross.svg')] bg-no-repeat bg-center",
+                                        onclick: move |_| { handle_delete_todo(todo_item.id) }
+                                    }
                                 }
                             }
                         }
@@ -107,6 +120,12 @@ async fn get_todos() -> Result<Vec<TodoItem>, ServerFnError> {
 async fn add_todo<'a>(contents: String) -> Result<TodoItem, ServerFnError> {
     let todo_repository = extract::<AppModule, _>().await?.todo_repository;
     todo_repository.add(&contents).await.map_err(server_err)
+}
+
+#[server]
+async fn delete_todo(id: i64) -> Result<bool, ServerFnError> {
+    let todo_repository = extract::<AppModule, _>().await?.todo_repository;
+    todo_repository.delete(id).await.map_err(server_err)
 }
 
 fn server_err(e: anyhow::Error) -> ServerFnError {

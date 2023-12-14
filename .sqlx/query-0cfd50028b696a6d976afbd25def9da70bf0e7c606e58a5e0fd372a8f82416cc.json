@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO todo_items ( contents, checked ) VALUES ( ?1 , 0 )",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "0cfd50028b696a6d976afbd25def9da70bf0e7c606e58a5e0fd372a8f82416cc"
+}

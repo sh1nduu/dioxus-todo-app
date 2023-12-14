@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM todo_items WHERE id = ?1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "e0b4b32a215b9c8dd52065846d0f0991bcf4fc0449d24a8f38c5ecefc75fbfe3"
+}

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use sqlx::{prelude::FromRow, SqlitePool};
-use std::env;
+use std::{env, fmt::format};
 
 use crate::domain::{TodoItem, TodoRepository};
 
@@ -28,6 +28,9 @@ impl TodoRepository for TodoRepositoryImpl {
     }
     async fn toggle(&self, id: i64) -> anyhow::Result<Option<TodoItem>> {
         toggle_todo(&self.pool, id).await
+    }
+    async fn clear_completed(&self, ids: &[i64]) -> anyhow::Result<bool> {
+        clear_completed(&self.pool, ids).await
     }
 }
 
@@ -123,4 +126,21 @@ pub async fn toggle_todo(pool: &SqlitePool, id: i64) -> anyhow::Result<Option<To
         .into();
 
     Ok(updated)
+}
+
+pub async fn clear_completed(pool: &SqlitePool, ids: &[i64]) -> anyhow::Result<bool> {
+    let params = ids
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let sql = format!("DELETE FROM todo_items WHERE id IN ( {} )", params);
+    let mut query = sqlx::query(&sql);
+    for id in ids {
+        query = query.bind(id);
+    }
+    let rows_affected = query.execute(pool).await?.rows_affected();
+
+    Ok(rows_affected > 0)
 }

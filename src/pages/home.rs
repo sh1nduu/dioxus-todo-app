@@ -7,6 +7,13 @@ use dioxus_fullstack::prelude::*;
 use crate::server::AppModule;
 use crate::{domain::TodoItem, layouts::Layout};
 
+#[derive(PartialEq, Clone, Copy)]
+enum FilterState {
+    All,
+    Active,
+    Completed,
+}
+
 #[derive(PartialEq, Props)]
 pub(crate) struct HomeProps {}
 
@@ -17,6 +24,16 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
     };
     let todo_items = use_state(cx, move || todo_items.to_owned());
     let draft = use_state(cx, || "".to_string());
+    let filter_state = use_state(cx, || FilterState::All);
+
+    let filtered_todos: Vec<_> = todo_items
+        .iter()
+        .filter(|item| match **filter_state {
+            FilterState::All => true,
+            FilterState::Active => !item.checked,
+            FilterState::Completed => item.checked,
+        })
+        .collect();
 
     let handle_header_input = move |evt: Event<FormData>| {
         draft.set(evt.value.clone());
@@ -62,7 +79,24 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
             }
         })
     };
+    let handle_clear_completed = move |_| {
+        let checked_ids: Vec<_> = todo_items
+            .iter()
+            .filter(|item| item.checked)
+            .map(|item| item.id)
+            .collect();
+        to_owned![todo_items];
+        cx.spawn(async move {
+            match clear_completed_todos(checked_ids).await {
+                Ok(true) => todo_items.make_mut().retain(|item| !item.checked),
+                Ok(false) => log::warn!("No items are removed"),
+                Err(e) => log::error!("Failed! {}", e),
+            }
+        })
+    };
+    let handle_select_filter = move |selected: FilterState| filter_state.set(selected);
     let active_items_count = todo_items.iter().filter(|item| !item.checked).count();
+    let show_clear_completed = active_items_count != todo_items.len();
 
     cx.render(rsx! {
         Layout { 
@@ -94,7 +128,7 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
                         }
                     }
                     ul { class: "",
-                        todo_items.iter().map(|todo_item| rsx! {
+                        filtered_todos.iter().map(|todo_item| rsx! {
                             TodoRow {
                                 key: "{todo_item.id}",
                                 todo_item: todo_item,
@@ -103,16 +137,12 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
                             }
                         })
                     }
-                }
-                footer { class: "flex items-center bg-white drop-shadow text-gray-500 text-l h-12",
-                    div { class: "w-1/3 pl-4 ml-4",
-                        strong { "{active_items_count}" }
-                        " items left"
-                    }
-                    ul { class: "w-1/3 flex justify-evenly",
-                        li { class: "border border-gray-300", a { href: "#/", class: "p-2", "All" } }
-                        li { a { href: "#/active", class: "p-2", "Active" } }
-                        li { a { href: "#/completed", class: "p-2", "Completed" } }
+                    ListFooter {
+                        active_items_count: active_items_count,
+                        selected_filter: filter_state,
+                        show_clear_completed: show_clear_completed,
+                        on_select_filter: handle_select_filter,
+                        on_clear_completed: handle_clear_completed
                     }
                 }
             }
@@ -158,6 +188,62 @@ fn TodoRow<'a>(cx: Scope<'a, TodoRowProps<'a>>) -> Element<'a> {
     )
 }
 
+#[derive(Props)]
+struct ListFooterProps<'a> {
+    active_items_count: usize,
+    selected_filter: &'a FilterState,
+    show_clear_completed: bool,
+    on_select_filter: EventHandler<'a, FilterState>,
+    on_clear_completed: EventHandler<'a, ()>,
+}
+
+fn ListFooter<'a>(cx: Scope<'a, ListFooterProps<'a>>) -> Element<'a> {
+    let selected = |filter: &FilterState| {
+        if filter == cx.props.selected_filter {
+            "border border-gray-300"
+        } else {
+            ""
+        }
+    };
+
+    cx.render(rsx! {
+        footer { class: "flex justify-between items-center bg-white drop-shadow text-gray-500 text-l h-12",
+            div { class: "pl-4 ml-4",
+                strong { "{cx.props.active_items_count}" }
+                " items left"
+            }
+            ul { class: "flex justify-evenly",
+                [
+                    (FilterState::All, "All", "/#"),
+                    (FilterState::Active, "Active", "/#active"),
+                    (FilterState::Completed, "Completed", "/#completed"),
+                ].iter().map(|(state, text, url)| rsx! {
+                    li {
+                        class: selected(state),
+                        a {
+                            href: "{url}",
+                            class: "p-2",
+                            onclick: |_| cx.props.on_select_filter.call(state.clone()),
+                            "{text}"
+                        }
+                    }
+                })
+            }
+            div { class: "mr-4 flex flex-row-reverse w-[124px]",
+                if cx.props.show_clear_completed {
+                    rsx! {
+                        button {
+                            class: "decoration-slate-500 hover:underline",
+                            onclick: |_| cx.props.on_clear_completed.call(()),
+                            "Clear Completed"
+                        }
+                    }
+                }
+            }
+        }
+    })
+}
+
 #[server]
 async fn get_todos() -> Result<Vec<TodoItem>, ServerFnError> {
     let todo_repository = extract::<AppModule, _>().await?.todo_repository;
@@ -180,6 +266,14 @@ async fn delete_todo(id: i64) -> Result<bool, ServerFnError> {
 async fn toggle_todo(id: i64) -> Result<Option<TodoItem>, ServerFnError> {
     let todo_repository = extract::<AppModule, _>().await?.todo_repository;
     todo_repository.toggle(id).await.map_err(server_err)
+}
+#[server]
+async fn clear_completed_todos(ids: Vec<i64>) -> Result<bool, ServerFnError> {
+    let todo_repository = extract::<AppModule, _>().await?.todo_repository;
+    todo_repository
+        .clear_completed(&ids)
+        .await
+        .map_err(server_err)
 }
 
 fn server_err(e: anyhow::Error) -> ServerFnError {

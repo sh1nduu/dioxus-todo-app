@@ -24,5 +24,6 @@ pub trait TodoRepository: Send + Sync + 'static {
     async fn add(&self, contents: &'_ str) -> anyhow::Result<TodoItem>;
     async fn delete(&self, id: i64) -> anyhow::Result<bool>;
     async fn toggle(&self, id: i64) -> anyhow::Result<Option<TodoItem>>;
+    async fn toggle_all(&self, checked: bool) -> anyhow::Result<bool>;
     async fn clear_completed(&self, ids: &[i64]) -> anyhow::Result<bool>;
 }

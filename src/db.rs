@@ -29,6 +29,9 @@ impl TodoRepository for TodoRepositoryImpl {
     async fn toggle(&self, id: i64) -> anyhow::Result<Option<TodoItem>> {
         toggle_todo(&self.pool, id).await
     }
+    async fn toggle_all(&self, checked: bool) -> anyhow::Result<bool> {
+        toggle_all(&self.pool, checked).await
+    }
     async fn clear_completed(&self, ids: &[i64]) -> anyhow::Result<bool> {
         clear_completed(&self.pool, ids).await
     }
@@ -126,6 +129,19 @@ pub async fn toggle_todo(pool: &SqlitePool, id: i64) -> anyhow::Result<Option<To
         .into();
 
     Ok(updated)
+}
+
+pub async fn toggle_all(pool: &SqlitePool, checked: bool) -> anyhow::Result<bool> {
+    let updated = sqlx::query_as!(
+        OptionalSqlTodo,
+        "UPDATE todo_items SET checked = ?1",
+        checked
+    )
+    .execute(pool)
+    .await?
+    .rows_affected();
+
+    Ok(updated > 0)
 }
 
 pub async fn clear_completed(pool: &SqlitePool, ids: &[i64]) -> anyhow::Result<bool> {

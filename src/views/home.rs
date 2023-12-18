@@ -44,6 +44,26 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
             }
         })
     };
+    let handle_toggle_all = move |_| {
+        let checked_items: Vec<_> = todo_items.iter().filter(|item| item.checked).collect();
+        let to_checked = checked_items.len() == 0 || checked_items.len() != todo_items.len();
+        to_owned![todo_items];
+        cx.spawn(async move {
+            match toggle_all(to_checked).await {
+                Ok(true) => todo_items.set(
+                    todo_items
+                        .iter()
+                        .map(|item| TodoItem {
+                            checked: to_checked,
+                            ..item.clone()
+                        })
+                        .collect(),
+                ),
+                Ok(false) => log::info!("Failed to toggle all items (to_checked: {})", to_checked),
+                Err(e) => log::error!("Failed! {}", e),
+            }
+        })
+    };
     let handle_delete_todo = move |id| {
         to_owned![todo_items];
         cx.spawn(async move {
@@ -98,7 +118,7 @@ pub(crate) fn Home(cx: Scope<HomeProps>) -> Element {
                     }
                 }
                 section { class: "bg-white drop-shadow",
-                    Control { on_add: handle_add_todo }
+                    Control { on_toggle_all: handle_toggle_all, on_add: handle_add_todo }
                     ul { class: "",
                         filtered_todos.iter().map(|todo_item| rsx! {
                             TodoEntry {
@@ -145,6 +165,16 @@ async fn toggle_todo(id: i64) -> Result<Option<TodoItem>, ServerFnError> {
     let todo_repository = extract::<AppModule, _>().await?.todo_repository;
     todo_repository.toggle(id).await.map_err(server_err)
 }
+
+#[server]
+async fn toggle_all(checked: bool) -> Result<bool, ServerFnError> {
+    let todo_repository = extract::<AppModule, _>().await?.todo_repository;
+    todo_repository
+        .toggle_all(checked)
+        .await
+        .map_err(server_err)
+}
+
 #[server]
 async fn clear_completed_todos(ids: Vec<i64>) -> Result<bool, ServerFnError> {
     let todo_repository = extract::<AppModule, _>().await?.todo_repository;

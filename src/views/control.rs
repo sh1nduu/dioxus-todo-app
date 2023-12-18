@@ -4,6 +4,7 @@ use dioxus::{html::input_data::keyboard_types::Key, prelude::*};
 
 #[derive(Props)]
 pub struct ControlProps<'a> {
+    on_toggle_all: EventHandler<'a, ()>,
     on_add: EventHandler<'a, String>,
 }
 
@@ -31,7 +32,8 @@ pub fn Control<'a>(cx: Scope<'a, ControlProps<'a>>) -> Element<'a> {
             input {
                 id: "toggle-all",
                 class: "w-[1px] h-[1px] border-none opacity-0",
-                r#type: "checkbox"
+                r#type: "checkbox",
+                oninput: move |_| cx.props.on_toggle_all.call(())
             }
             input {
                 class: "w-full border-none text-gray-500 text-2xl font-light outline-none p-4",

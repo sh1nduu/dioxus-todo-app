@@ -1,6 +1,6 @@
 mod domain;
 mod layouts;
-mod pages;
+mod views;
 
 #[cfg(feature = "ssr")]
 mod db;
@@ -11,14 +11,12 @@ use dioxus::prelude::*;
 use dioxus_router::prelude::*;
 use log::LevelFilter;
 
-use crate::pages::{Blog, Home};
+use crate::views::Home;
 
 #[derive(Clone, Routable, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum Route {
     #[route("/")]
     Home {},
-    #[route("/blog/:id")]
-    Blog { id: i32 },
 }
 
 #[component]

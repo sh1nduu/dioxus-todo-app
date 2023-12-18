@@ -1,20 +1,10 @@
+# TodoMVC (using Dioxus Fullstack)
+
+This project is a TodoMVC (Todo List) application implemented with Dioxus Fullstack, a Rust-based SPA (Single Page Application) framework. 
+
 # Development
 
-1. Install npm: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
-2. Install the tailwind css cli: https://tailwindcss.com/docs/installation
-3. Run the following command in the root of the project to start the tailwind CSS compiler:
-
-```bash
-npx tailwindcss -i ./input.css -o ./public/tailwind.css --watch
-```
-Launch the Dioxus Fullstack app:
-
-```bash
-dx build --features web --release
-cargo run --features ssr --release
-```
-
-## Setup Database
+It is recommended to use devcontainer.
 
 1. Declare the database URL
 
@@ -34,10 +24,15 @@ cargo run --features ssr --release
     sqlx migrate run
     ```
 
-## For Mac users (WIP)
+4. Build tailwindcss
 
-Apple Clang doesn't support `wasm32-unknown-unknown`, so you need to install llvm.org Clang instead.
+    ```bash
+    npx tailwindcss -i ./input.css -o ./public/tailwind.css --watch
+    ```
 
-```
-brew install llvm
-```
+5. Launch the Dioxus Fullstack app:
+
+    ```bash
+    dx build --features web --release
+    cargo run --features ssr --release
+    ```
